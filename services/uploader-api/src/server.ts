@@ -6,21 +6,15 @@ const port = process.env.PORT || 8080;
 app.use(express.json());
 
 app.get("/health", (_req, res) => {
-  res.json({ status: "ok", service: "analytics-api" });
+  res.json({ status: "ok", service: "uploader-api" });
 });
 
-// TODO: implement analytics logic reading from DB
-app.get("/api/analytics/:videoId", (req, res) => {
-  const { videoId } = req.params;
-  // Stubbed metrics
-  res.json({
-    videoId,
-    views: 123,
-    likes: 10,
-    watchTimeSeconds: 4567
-  });
+// TODO: real upload logic later
+app.post("/api/upload", (req, res) => {
+  res.json({ message: "Upload endpoint stub", body: req.body });
 });
 
 app.listen(port, () => {
-  console.log(`Analytics API listening on port ${port}`);
+  console.log(`Uploader API listening on port ${port}`);
 });
+

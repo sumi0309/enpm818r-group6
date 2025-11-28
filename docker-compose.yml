@@ -1,0 +1,58 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: va-frontend
+    ports:
+      - "3000:80"        # browser: http://localhost:3000
+    environment: {}
+     # Adjust these if your frontend reads them (e.g. via VITE_ vars)
+      # VITE_API_BASE_URL: "http://localhost:8081"
+      # VITE_ANALYTICS_BASE_URL: "http://localhost:8082"
+      
+    depends_on:
+      - uploader-api
+      - analytics-api
+
+  uploader-api:
+    build:
+      context: ./services/uploader-api
+      dockerfile: Dockerfile
+    container_name: va-uploader-api
+    ports:
+      - "8081:8080"      # API: http://localhost:8081
+    environment:
+      NODE_ENV: "development"
+      PORT: "8080"
+      # Stubbed envs for now – real SQS/S3 later
+      S3_BUCKET_NAME: "local-dev-bucket"
+      SQS_QUEUE_URL: "http://local-sqs-dev"  # placeholder
+    restart: unless-stopped
+
+  analytics-api:
+    build:
+      context: ./services/analytics-api
+      dockerfile: Dockerfile
+    container_name: va-analytics-api
+    ports:
+      - "8082:8080"      # API: http://localhost:8082
+    environment:
+      NODE_ENV: "development"
+      PORT: "8080"
+    restart: unless-stopped
+
+  processor:
+    build:
+      context: ./services/processor
+      dockerfile: Dockerfile
+    container_name: va-processor
+    environment:
+      NODE_ENV: "development"
+      S3_BUCKET_NAME: "local-dev-bucket"
+      SQS_QUEUE_URL: "http://local-sqs-dev"
+    depends_on:
+      - uploader-api
+    restart: unless-stopped
