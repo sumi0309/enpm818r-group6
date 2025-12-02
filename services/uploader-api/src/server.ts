@@ -1,20 +1,21 @@
 import express from "express";
+import cors from "cors";
+import { config } from "./config/env";
+import uploadRoutes from "./routes/uploadRoutes";
 
 const app = express();
-const port = process.env.PORT || 8080;
 
+// Middleware
+app.use(cors()); // Allow frontend access
 app.use(express.json());
 
-app.get("/health", (_req, res) => {
+// Routes
+app.use("/api", uploadRoutes);
+
+app.get("/health", (req, res) => {
   res.json({ status: "ok", service: "uploader-api" });
 });
 
-// TODO: real upload logic later
-app.post("/api/upload", (req, res) => {
-  res.json({ message: "Upload endpoint stub", body: req.body });
+app.listen(config.port, () => {
+  console.log(`Uploader API listening on port ${config.port}`);
 });
-
-app.listen(port, () => {
-  console.log(`Uploader API listening on port ${port}`);
-});
-
