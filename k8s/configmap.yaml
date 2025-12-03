@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: video-analytics-config
+  namespace: video-analytics
+data:
+  APP_ENV: "dev"
+  FRONTEND_BASE_URL: "http://localhost:3000"
+  API_UPLOAD_BASE_URL: "http://localhost:8081"
+  API_ANALYTICS_BASE_URL: "http://localhost:8082"
+  

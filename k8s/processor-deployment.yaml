@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-processor
+  namespace: video-analytics
+  labels:
+    app: video-analytics
+    component: processor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-analytics
+      component: processor
+  template:
+    metadata:
+      labels:
+        app: video-analytics
+        component: processor
+    spec:
+      containers:
+        - name: va-processor
+          image: 801867402650.dkr.ecr.us-east-1.amazonaws.com/processor-api:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: video-analytics-config
+          env:
+            - name: S3_BUCKET_NAME
+              value: "local-dev-bucket"
+            - name: SQS_QUEUE_URL
+              value: "http://local-sqs-dev"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "echo ok"]
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      serviceAccountName: app-sa
+

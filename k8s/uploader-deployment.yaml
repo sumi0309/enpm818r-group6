@@ -1,0 +1,57 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-uploader-api
+  namespace: video-analytics
+  labels:
+    app: video-analytics
+    component: uploader-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-analytics
+      component: uploader-api
+  template:
+    metadata:
+      labels:
+        app: video-analytics
+        component: uploader-api
+    spec:
+      containers:
+        - name: va-uploader-api
+          image: 801867402650.dkr.ecr.us-east-1.amazonaws.com/uploader-api:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: video-analytics-config
+          env:
+            - name: PORT
+              value: "8080"
+            - name: S3_BUCKET_NAME
+              value: "local-dev-bucket"
+            - name: SQS_QUEUE_URL
+              value: "http://local-sqs-dev"
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      serviceAccountName: app-sa
+

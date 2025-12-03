@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: video-analytics-ingress
+  namespace: video-analytics
+  annotations:
+    kubernetes.io/ingress.class: nginx
+spec:
+  rules:
+    - host: video-analytics.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: va-frontend-svc
+                port:
+                  number: 80
+          - path: /api/upload
+            pathType: Prefix
+            backend:
+              service:
+                name: va-uploader-svc
+                port:
+                  number: 8080
+          - path: /api/analytics
+            pathType: Prefix
+            backend:
+              service:
+                name: va-analytics-svc
+                port:
+                  number: 8080
