@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:20-alpine AS builder
 WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
@@ -6,7 +6,7 @@ COPY . .
 RUN npm run build
 
 # ---------- Runtime image ----------
-FROM node:20-alpine
+FROM public.ecr.aws/docker/library/node:20-alpine
 
 # INSTALL FFMPEG HERE
 RUN apk add --no-cache ffmpeg

@@ -1,4 +1,4 @@
-FROM node:20-alpine AS builder
+FROM public.ecr.aws/docker/library/node:22-alpine 
 
 WORKDIR /usr/src/app
 
