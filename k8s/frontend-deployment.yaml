@@ -22,6 +22,7 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 101        # numeric non-root UID (nginx user)
+        fsGroup: 101
       containers:
         - name: va-frontend
           image: 801867402650.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
