@@ -7,6 +7,21 @@ interface MulterRequest extends Request {
   file?: any; // multer-s3 adds the 'file' object with 'location' and 'key'
 }
 
+export const getVideos = async (req: Request, res: Response) => {
+  try {
+    const sql = `
+      SELECT id, title, description, filename, s3_bucket_name, s3_key_original, s3_key_thumbnail, status, created_at, updated_at
+      FROM videos
+      ORDER BY created_at DESC
+    `;
+    const result = await query(sql);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching videos:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
 export const uploadVideo = async (req: MulterRequest, res: Response) => {
   try {
     if (!req.file) {
