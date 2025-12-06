@@ -5,6 +5,16 @@ WORKDIR /app
 COPY package*.json tsconfig*.json ./
 RUN npm install
 COPY . .
+
+ARG VITE_UPLOADER_API_URL
+ARG VITE_ANALYTICS_API_URL
+ARG VITE_S3_BUCKET_NAME
+
+# Set them as ENV variables so the build process (Vite) can see them
+ENV VITE_UPLOADER_API_URL=$VITE_UPLOADER_API_URL
+ENV VITE_ANALYTICS_API_URL=$VITE_ANALYTICS_API_URL
+ENV VITE_S3_BUCKET_NAME=$VITE_S3_BUCKET_NAME
+
 RUN npm run build
 
 # ---------- Runtime stage ----------

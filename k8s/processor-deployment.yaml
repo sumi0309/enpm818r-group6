@@ -27,7 +27,7 @@ spec:
                 name: video-analytics-config
           env:
             - name: S3_BUCKET_NAME
-              value: "local-dev-bucket"
+              value: "va-video-assets-dev-801867402650"
             - name: SQS_QUEUE_URL
               value: "http://local-sqs-dev"
           resources:
@@ -43,4 +43,3 @@ spec:
             initialDelaySeconds: 30
             periodSeconds: 30
       serviceAccountName: app-sa
-
