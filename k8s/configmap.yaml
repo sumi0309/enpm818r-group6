@@ -4,8 +4,7 @@ metadata:
   name: video-analytics-config
   namespace: video-analytics
 data:
-  APP_ENV: "dev"
-  FRONTEND_BASE_URL: "http://localhost:3000"
-  API_UPLOAD_BASE_URL: "http://localhost:8081"
-  API_ANALYTICS_BASE_URL: "http://localhost:8082"
-  
+  APP_ENV: "production"
+  FRONTEND_BASE_URL: "/"
+  API_UPLOAD_BASE_URL: "/api/upload"
+  API_ANALYTICS_BASE_URL: "/api/analytics"
