@@ -1,0 +1,84 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "RDS PostgreSQL with Hardcoded Credentials (WARNING: Low Security)"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The VPC ID where the EKS cluster resides.
+
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of Private Subnet IDs for the RDS instance.
+
+  EksNodeSecurityGroupId:
+    Type: AWS::EC2::SecurityGroup::Id
+    Description: The Security Group ID of your EKS Nodes.
+
+  DbInstanceClass:
+    Type: String
+    Default: db.t3.micro
+    Description: The instance type for the RDS database.
+
+Resources:
+  # -------------------------------------------------------------------------
+  # 1. Security Group (Allows EKS Nodes -> RDS on 5432)
+  # -------------------------------------------------------------------------
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: "Allow Inbound Traffic from EKS Nodes"
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EksNodeSecurityGroupId
+          Description: "Allow PostgreSQL access from EKS Nodes"
+
+  # -------------------------------------------------------------------------
+  # 2. DB Subnet Group
+  # -------------------------------------------------------------------------
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: !Sub "Subnet group for ${Environment} RDS"
+      SubnetIds: !Ref PrivateSubnetIds
+
+  # -------------------------------------------------------------------------
+  # 3. RDS Instance
+  # -------------------------------------------------------------------------
+  PostgresInstance:
+    Type: AWS::RDS::DBInstance
+    Properties:
+      Engine: postgres
+      EngineVersion: "16.3"
+      DBInstanceClass: !Ref DbInstanceClass
+      AllocatedStorage: 20
+      StorageType: gp3
+      DBName: video_db
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      MasterUsername: "enpm818r_master_db"
+      MasterUserPassword: "ENPM818R-group-project"
+
+      PubliclyAccessible: false
+      StorageEncrypted: true
+      MultiAZ: !If [IsProd, true, false]
+      DeleteAutomatedBackups: false
+      BackupRetentionPeriod: 7
+
+Conditions:
+  IsProd: !Equals [!Ref Environment, prod]
+
+Outputs:
+  RDSEndpoint:
+    Description: "RDS Endpoint Address"
+    Value: !GetAtt PostgresInstance.Endpoint.Address
+    Export:
+      Name: !Sub "${Environment}-RDSEndpoint"

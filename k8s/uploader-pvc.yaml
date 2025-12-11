@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-frontend
+  namespace: video-analytics
+  labels:
+    app: video-analytics
+    component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-analytics
+      component: frontend
+  template:
+    metadata:
+      labels:
+        app: video-analytics
+        component: frontend
+    spec:
+      serviceAccountName: app-sa
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
+      containers:
+        - name: va-frontend
+          image: 801867402650.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - configMapRef:
+                name: video-analytics-config
+          # --- ADDITION 1: Mount the volume inside the container ---
+          volumeMounts:
+            - name: persistent-storage
+              mountPath: /var/cache/nginx # Or any valid path the user can write to
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+      volumes:
+        - name: persistent-storage
+          persistentVolumeClaim:
+            claimName: uploader-storage

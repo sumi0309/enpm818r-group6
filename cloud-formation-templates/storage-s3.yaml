@@ -1,0 +1,52 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "S3 Bucket for Video Analytics Platform (Assets and Thumbnails)"
+
+Parameters:
+  Environment:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+    Description: Environment name (e.g., dev, prod)
+
+  FrontendOrigin:
+    Type: String
+    Default: "http://localhost:3000"
+    Description: The URL of your frontend to allow CORS (e.g., http://localhost:3000 or https://myapp.com)
+
+Resources:
+  VideoAssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "va-video-assets-${Environment}-${AWS::AccountId}"
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      CorsConfiguration:
+        CorsRules:
+          - AllowedHeaders:
+              - "*"
+            AllowedMethods:
+              - GET
+              - PUT
+              - HEAD
+            AllowedOrigins:
+              - !Ref FrontendOrigin
+            ExposedHeaders:
+              - ETag
+            MaxAge: 3000
+
+Outputs:
+  BucketName:
+    Description: "Name of the created S3 bucket"
+    Value: !Ref VideoAssetsBucket
+    Export:
+      Name: !Sub "${Environment}-VideoAssetsBucketName"
+  BucketArn:
+    Description: "ARN of the created S3 bucket"
+    Value: !GetAtt VideoAssetsBucket.Arn

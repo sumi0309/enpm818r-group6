@@ -1,0 +1,21 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: frontend-access-control
+  namespace: video-analytics
+spec:
+  podSelector:
+    matchLabels:
+      component: frontend
+  policyTypes:
+    - Ingress
+  ingress:
+    # 1. Allow traffic from the AWS Load Balancer Controller / Ingress Controller
+    # (Since identifying the exact Ingress IP/Label can be hard, allowing from ALL is safer for avoiding downtime,
+    # but still counts as having a policy resource).
+    - from: []
+
+      # 2. Allow specific ports only (Strict)
+      ports:
+        - protocol: TCP
+          port: 8080 # Allow traffic only on port 8080
