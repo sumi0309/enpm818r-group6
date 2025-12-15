@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "AWS CloudFormation template to create VPC, Subnets, Internet Gateway, Route Tables, and VPC Endpoint"
+
+Resources:
+  ProjectVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 10.0.0.0/24
+      InstanceTenancy: default
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: project-vpc
+
+  ProjectVPCEndpointS3:
+    Type: AWS::EC2::VPCEndpoint
+    Properties:
+      VpcId: !Ref ProjectVPC
+      ServiceName: !Sub "com.amazonaws.${AWS::Region}.s3"
+      VpcEndpointType: Gateway
+      RouteTableIds:
+        - !Ref ProjectRouteTablePrivate2UsEast1b
+      Tags:
+        - Key: Name
+          Value: project-vpce-s3
+
+  ProjectSubnetPrivate2UsEast1b:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref ProjectVPC
+      CidrBlock: 10.0.0.144/28
+      AvailabilityZone: us-east-1b
+      Tags:
+        - Key: Name
+          Value: project-subnet-private2-us-east-1b
+
+  ProjectInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: project-igw
+
+  ProjectVPCGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref ProjectVPC
+      InternetGatewayId: !Ref ProjectInternetGateway
+
+  ProjectRouteTablePrivate2UsEast1b:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ProjectVPC
+      Tags:
+        - Key: Name
+          Value: project-rtb-private2-us-east-1b
+
+  ProjectRouteTablePublic:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref ProjectVPC
+      Tags:
+        - Key: Name
+          Value: project-rtb-public
+
+  ProjectRoutePublic:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref ProjectRouteTablePublic
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref ProjectInternetGateway
+
+  ProjectSubnetPrivate2UsEast1bRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: !Ref ProjectSubnetPrivate2UsEast1b
+      RouteTableId: !Ref ProjectRouteTablePrivate2UsEast1b
+
+Outputs:
+  VPC:
+    Description: A reference to the created VPC
+    Value: !Ref ProjectVPC
+    Export:
+      Name: !Sub "${AWS::StackName}-VPC"
+
+  VPCEndpointS3:
+    Description: A reference to the created VPC Endpoint for S3
+    Value: !Ref ProjectVPCEndpointS3
+    Export:
+      Name: !Sub "${AWS::StackName}-VPCEndpointS3"
+
+  SubnetPrivate2UsEast1b:
+    Description: A reference to the created private subnet in us-east-1b
+    Value: !Ref ProjectSubnetPrivate2UsEast1b
+    Export:
+      Name: !Sub "${AWS::StackName}-SubnetPrivate2UsEast1b"
+
+  InternetGateway:
+    Description: A reference to the created Internet Gateway
+    Value: !Ref ProjectInternetGateway
+    Export:
+      Name: !Sub "${AWS::StackName}-InternetGateway"
+
+  RouteTablePrivate2UsEast1b:
+    Description: A reference to the created private route table in us-east-1b
+    Value: !Ref ProjectRouteTablePrivate2UsEast1b
+    Export:
+      Name: !Sub "${AWS::StackName}-RouteTablePrivate2UsEast1b"
+
+  RouteTablePublic:
+    Description: A reference to the created public route table
+    Value: !Ref ProjectRouteTablePublic
+    Export:
+      Name: !Sub "${AWS::StackName}-RouteTablePublic"

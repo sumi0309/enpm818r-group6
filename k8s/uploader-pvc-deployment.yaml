@@ -1,0 +1,78 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: va-uploader-api
+  namespace: video-analytics
+  labels:
+    app: video-analytics
+    component: uploader-api
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: video-analytics
+      component: uploader-api
+  template:
+    metadata:
+      labels:
+        app: video-analytics
+        component: uploader-api
+    spec:
+      serviceAccountName: app-sa
+      # --- FIX: Init Container to set permissions ---
+      initContainers:
+        - name: volume-permissions
+          image: busybox
+          command: ["sh", "-c", "chmod 777 /tmp/uploads"]
+          volumeMounts:
+            - name: uploader-storage-vol
+              mountPath: /tmp/uploads
+      # -----------------------------------------------
+      containers:
+        - name: va-uploader-api
+          image: 801867402650.dkr.ecr.us-east-1.amazonaws.com/uploader-api:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          env:
+            - name: PORT
+              value: "8081"
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: S3_BUCKET_NAME
+              value: "va-video-assets-dev-801867402650"
+            - name: PROCESSOR_API_URL
+              value: "http://va-processor-svc.video-analytics.svc.cluster.local:80/process"
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: DB_HOST
+            - name: DB_PORT
+              value: "5432"
+            - name: DB_NAME
+              value: "video_db"
+            - name: DB_USER
+              value: "enpm818r_master_db"
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: DB_PASSWORD
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: AWS_ACCESS_KEY_ID
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: db-secrets
+                  key: AWS_SECRET_ACCESS_KEY
+          volumeMounts:
+            - name: uploader-storage-vol
+              mountPath: /tmp/uploads
+      volumes:
+        - name: uploader-storage-vol
+          persistentVolumeClaim:
+            claimName: uploader-data

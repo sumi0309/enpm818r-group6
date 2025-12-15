@@ -1,0 +1,99 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "EKS Cluster and Node Group for ENPM818R Group Project"
+
+Parameters:
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: The existing VPC ID
+  PublicSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of two Public Subnets for the Control Plane/Load Balancers
+  PrivateSubnetIds:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: List of two Private Subnets for the Worker Nodes
+  ClusterName:
+    Type: String
+    Default: enpm818r-group-project-eks-cluster
+    Description: Name of the EKS Cluster
+
+Resources:
+  # ------------------------------------------------------------------
+  # IAM Role for EKS Control Plane
+  # ------------------------------------------------------------------
+  EKSClusterRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: enpm818r-group-project-eks-cluster-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: eks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSClusterPolicy
+
+  # ------------------------------------------------------------------
+  # IAM Role for Worker Nodes
+  # ------------------------------------------------------------------
+  NodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: enpm818r-group-project-node-role
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
+        - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
+        # Required for CloudWatch/SSM as per guidelines
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+
+  # ------------------------------------------------------------------
+  # EKS Control Plane
+  # ------------------------------------------------------------------
+  EKSCluster:
+    Type: AWS::EKS::Cluster
+    Properties:
+      Name: !Ref ClusterName
+      Version: "1.31" # Using a recent stable version
+      RoleArn: !GetAtt EKSClusterRole.Arn
+      ResourcesVpcConfig:
+        SubnetIds: !Ref PublicSubnetIds # Control plane ENIs usually go in public or private, public ensures easier access without VPN
+        SecurityGroupIds: [] # Optional: Add specific SG if needed
+        EndpointPublicAccess: true
+        EndpointPrivateAccess: true
+      Logging:
+        ClusterLogging:
+          EnabledTypes:
+            - api
+            - audit
+            - authenticator
+            - controllerManager
+            - scheduler
+
+  # ------------------------------------------------------------------
+  # Node Group (Managed Workers)
+  # ------------------------------------------------------------------
+  NodeGroup:
+    Type: AWS::EKS::Nodegroup
+    Properties:
+      ClusterName: !Ref EKSCluster
+      NodegroupName: enpm818r-group-project-nodegroup-1
+      NodeRole: !GetAtt NodeInstanceRole.Arn
+      Subnets: !Ref PrivateSubnetIds # Workers should be in private subnets
+      AmiType: AL2_x86_64
+      InstanceTypes:
+        - t3.medium
+      ScalingConfig:
+        MinSize: 2
+        MaxSize: 4
+        DesiredSize: 2
+      Labels:
+        role: worker
